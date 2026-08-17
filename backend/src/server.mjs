@@ -1,10 +1,21 @@
 import { createServer } from "node:http";
+import { createReadStream, existsSync } from "node:fs";
+import { dirname, extname, join } from "node:path";
 import { URL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { all, get, migrate } from "./db.mjs";
 import { seed } from "./seed.mjs";
 
 const PORT = Number(process.env.PORT || 4000);
 const baselineScooterKgPerKm = 0.075;
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const publicDir = join(__dirname, "..", "..", "frontend", "public");
+const mimeTypes = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8"
+};
 
 function send(res, status, payload) {
   const body = JSON.stringify(payload);
@@ -16,6 +27,22 @@ function send(res, status, payload) {
     "Content-Length": Buffer.byteLength(body)
   });
   res.end(body);
+}
+
+function sendStatic(req, res) {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const requestedPath = url.pathname === "/" ? "/index.html" : url.pathname;
+  const filePath = join(publicDir, requestedPath);
+
+  if (!filePath.startsWith(publicDir) || !existsSync(filePath)) {
+    return false;
+  }
+
+  res.writeHead(200, {
+    "Content-Type": mimeTypes[extname(filePath)] || "application/octet-stream"
+  });
+  createReadStream(filePath).pipe(res);
+  return true;
 }
 
 function parseBody(req) {
@@ -88,7 +115,13 @@ async function handle(req, res) {
     });
   }
 
-  send(res, 404, { error: "API route not found" });
+  if (url.pathname.startsWith("/api/")) {
+    return send(res, 404, { error: "API route not found" });
+  }
+
+  if (!sendStatic(req, res)) {
+    send(res, 404, { error: "Page not found" });
+  }
 }
 
 migrate();
@@ -99,5 +132,5 @@ createServer((req, res) => {
     send(res, 500, { error: error.message || "Server error" });
   });
 }).listen(PORT, () => {
-  console.log(`API server running at http://localhost:${PORT}/api`);
+  console.log(`Server running at http://localhost:${PORT}`);
 });

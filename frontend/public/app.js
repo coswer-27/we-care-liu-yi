@@ -1,4 +1,6 @@
-const API_BASE = "http://localhost:4000/api";
+const API_BASE = window.location.hostname === "localhost" && window.location.port === "5173"
+  ? "http://localhost:4000/api"
+  : "/api";
 
 const state = {
   turtleLife: 0,
