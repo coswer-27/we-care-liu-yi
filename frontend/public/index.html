@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>頂琉計畫 | 琉意健康 綠行琉客</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="頂琉計畫首頁">
+        <span class="brand-mark">龜</span>
+        <span><strong>頂琉計畫</strong><small>低碳旅遊 · 琉行旅客</small></span>
+      </a>
+      <nav>
+        <a href="#calculator">碳足跡</a>
+        <a href="#routes">低碳路線</a>
+        <a href="#actions">永續行動</a>
+        <a href="#news">最新消息</a>
+      </nav>
+    </header>
+
+    <main id="home">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">小琉球永續旅遊平台</p>
+          <h1>一起減碳，守護小琉球</h1>
+          <p class="lede">把交通選擇、減塑行動、在地消費與海洋教育串成一個可維護的公共網站系統。</p>
+        </div>
+        <div class="turtle-panel" aria-live="polite">
+          <span class="turtle">🐢</span>
+          <div>
+            <strong id="turtleStage">幼龜</strong>
+            <p>海龜生命值 <span id="turtleLife">0</span> / 1000</p>
+            <div class="meter"><span id="lifeMeter"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard" id="calculator">
+        <article class="tool-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Carbon Calculator</p>
+            <h2>碳足跡計算</h2>
+          </div>
+          <form id="carbonForm">
+            <label>
+              起點
+              <select id="startPlace" required></select>
+            </label>
+            <label>
+              終點
+              <select id="endPlace" required></select>
+            </label>
+            <fieldset>
+              <legend>交通方式</legend>
+              <div class="mode-grid" id="transportModes"></div>
+            </fieldset>
+            <button type="submit">開始計算</button>
+          </form>
+          <div class="result" id="carbonResult">
+            <span>選擇旅程後會顯示排碳與點數。</span>
+          </div>
+        </article>
+
+        <article class="tool-panel accent-blue">
+          <div class="section-heading">
+            <p class="eyebrow">Turtle Growth</p>
+            <h2>海龜養成互動</h2>
+          </div>
+          <p>選擇低碳交通、減塑行動或支持永續店家，會累積生命值並解鎖知識與獎勵。</p>
+          <div class="stage-row">
+            <span>蛋</span><span>幼龜</span><span>青龜</span><span>成龜</span>
+          </div>
+        </article>
+      </section>
+
+      <section id="routes" class="content-band">
+        <div class="section-heading">
+          <p class="eyebrow">Routes</p>
+          <h2>低碳路線推薦</h2>
+        </div>
+        <div class="place-grid" id="placeGrid"></div>
+      </section>
+
+      <section id="actions" class="split-band">
+        <div>
+          <div class="section-heading">
+            <p class="eyebrow">Plastic Reduction</p>
+            <h2>減塑行動指南</h2>
+          </div>
+          <div id="actionList" class="list"></div>
+        </div>
+        <div>
+          <div class="section-heading">
+            <p class="eyebrow">Local Shops</p>
+            <h2>在地永續店家</h2>
+          </div>
+          <div id="shopList" class="list"></div>
+        </div>
+      </section>
+
+      <section id="news" class="content-band">
+        <div class="section-heading">
+          <p class="eyebrow">Education</p>
+          <h2>環境教育與最新消息</h2>
+        </div>
+        <div id="articleList" class="article-grid"></div>
+      </section>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
