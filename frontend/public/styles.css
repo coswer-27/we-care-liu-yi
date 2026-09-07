@@ -27,7 +27,9 @@
   --shadow-md: 0 8px 28px rgba(16, 38, 44, 0.1);
   --header-h: 60px;
 
-  --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* 思源宋體。後面接系統內建的中文宋體，字型還沒下載完時也不會跳成黑體。 */
+  --font: "Noto Serif TC", "Source Han Serif TC", "思源宋體", "Songti TC", "宋體-繁",
+    "PMingLiU", "MingLiU", Georgia, "Times New Roman", serif;
 }
 
 * {
