@@ -55,7 +55,9 @@ Carbon is computed in `server.mjs`: `savedKg` is the reduction against a scooter
 
 ### Frontend
 
-`frontend/public/app.js` is a hash-router SPA: a `ROUTES` map of route → template function, re-rendered into `#view`, with per-route `bind*()` functions attaching listeners after each render. All interpolated data goes through `esc()`. Coordinates in `seed.mjs` are approximate reference values, flagged as such in the UI footer and README.
+`frontend/public/app.js` is a hash-router SPA: a `ROUTES` map of route → template function, re-rendered into `#view`, with per-route `bind*()` functions attaching listeners after each render. All interpolated data goes through `esc()`.
+
+Coordinates in `seed.mjs` come from OpenStreetMap via Nominatim (house-number level for the shops). Two spots — 紅番石 and 百年老榕樹 — have no OSM entry and remain approximate; both say so in their own `description`, so add new places by geocoding rather than estimating.
 
 ## Open product questions
 
