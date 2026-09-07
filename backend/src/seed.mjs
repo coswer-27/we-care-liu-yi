@@ -1,28 +1,31 @@
 import { db, migrate } from "./db.mjs";
 
-// 座標為依公開地圖概略標定的參考值，正式上線前建議以實地或官方 GIS 資料校正。
+// 座標取自 OpenStreetMap（Nominatim 查詢），除了下方註記「概略」的兩處之外，
+// 都是官方或社群標定的實際位置。
 const PLACES = [
-  { name: "白沙尾觀光港", emoji: "⛴️", category: "port", description: "小琉球對外門戶，多數低碳行程的起點與終點。", lat: 22.3535, lng: 120.3773, distance_order: 0 },
-  { name: "花瓶岩", emoji: "🪨", category: "landmark", description: "小琉球代表地標，步行即可抵達的珊瑚礁岩。", lat: 22.3534, lng: 120.3799, distance_order: 1 },
-  { name: "美人沙灘", emoji: "🏖️", category: "beach", description: "鄰近港口的細沙海灘，適合傍晚散步。", lat: 22.3512, lng: 120.3700, distance_order: 2 },
-  { name: "中澳沙灘", emoji: "🌊", category: "beach", description: "海龜常出沒的沙灘，請保持距離、勿觸摸。", lat: 22.3527, lng: 120.3826, distance_order: 3 },
-  { name: "美人洞", emoji: "🌊", category: "trail", description: "海蝕地形與步道群，環境教育導覽熱點。", lat: 22.3521, lng: 120.3684, distance_order: 4 },
-  { name: "望海亭", emoji: "👀", category: "viewpoint", description: "美人洞園區制高點，可俯瞰北岸海域。", lat: 22.3500, lng: 120.3648, distance_order: 5 },
-  { name: "肚仔坪潮間帶", emoji: "🐚", category: "intertidal", description: "保育示範區，需付觀光保育費並依規劃路線參觀。", lat: 22.3455, lng: 120.3595, distance_order: 6 },
-  { name: "蛤板灣（威尼斯沙灘）", emoji: "🏝️", category: "beach", description: "貝殼砂海灣，是島上知名的看夕陽地點。", lat: 22.3436, lng: 120.3606, distance_order: 7 },
-  { name: "杉福潮間帶", emoji: "🐢", category: "intertidal", description: "保育示範區，冬季休養期禁止進入。", lat: 22.3412, lng: 120.3592, distance_order: 8 },
-  { name: "杉福生態廊道", emoji: "🌿", category: "trail", description: "由軍事坑道改建的濱海步道。", lat: 22.3418, lng: 120.3598, distance_order: 9 },
-  { name: "山豬溝", emoji: "🌿", category: "forest", description: "珊瑚礁裂谷與原生林步道，島上重要生態教室。", lat: 22.3389, lng: 120.3617, distance_order: 10 },
-  { name: "落日亭", emoji: "🌅", category: "viewpoint", description: "西岸最佳日落觀景點，步行前往最無負擔。", lat: 22.3387, lng: 120.3600, distance_order: 11 },
-  { name: "烏鬼洞", emoji: "🪨", category: "trail", description: "結合歷史故事與珊瑚礁地形的園區。", lat: 22.3324, lng: 120.3616, distance_order: 12 },
-  { name: "觀音石", emoji: "🪨", category: "landmark", description: "南端酷似觀音側影的礁岩地景。", lat: 22.3300, lng: 120.3690, distance_order: 13 },
-  { name: "白燈塔（琉球嶼燈塔）", emoji: "🗼", category: "landmark", description: "島上制高處的百年燈塔，適合自行車途經。", lat: 22.3374, lng: 120.3728, distance_order: 14 },
-  { name: "百年老榕樹", emoji: "🌳", category: "landmark", description: "在地信仰與生活記憶交會的老樹。", lat: 22.3405, lng: 120.3735, distance_order: 15 },
-  { name: "碧雲寺", emoji: "🏮", category: "culture", description: "島上信仰中心，鄰近旅遊資訊站。", lat: 22.3421, lng: 120.3746, distance_order: 16 },
-  { name: "三民老街", emoji: "🏘️", category: "culture", description: "小琉球最熱鬧的街區，減塑店家最密集。", lat: 22.3438, lng: 120.3775, distance_order: 17 },
-  { name: "旭日亭", emoji: "🌅", category: "viewpoint", description: "東岸日出觀景亭，清晨步行剛剛好。", lat: 22.3430, lng: 120.3897, distance_order: 18 },
-  { name: "紅番石", emoji: "🪨", category: "landmark", description: "東岸礁岩地景，沿線可串接龍蝦洞。", lat: 22.3470, lng: 120.3890, distance_order: 19 },
-  { name: "龍蝦洞", emoji: "🦞", category: "landmark", description: "東岸海蝕溝地形，浪大時請勿靠近。", lat: 22.3452, lng: 120.3906, distance_order: 20 }
+  { name: "白沙尾觀光港（碼頭）", emoji: "⛴️", category: "port", description: "東琉線渡船碼頭，多數旅客上島的第一站，也是低碳行程的起點。", lat: 22.35251, lng: 120.38448, distance_order: 0 },
+  { name: "小琉球新天地免稅商店", emoji: "🛍️", category: "shopping", description: "澎坊免稅商店，就在白沙尾碼頭旁的客運大樓，步行即達。", lat: 22.35226, lng: 120.38457, distance_order: 1 },
+  { name: "三民老街", emoji: "🏘️", category: "culture", description: "港邊最熱鬧的街區，減塑店家與在地小吃最密集。", lat: 22.35213, lng: 120.38239, distance_order: 2 },
+  { name: "花瓶岩", emoji: "🪨", category: "landmark", description: "小琉球代表地標，從碼頭步行即可抵達的珊瑚礁岩。", lat: 22.35568, lng: 120.38073, distance_order: 3 },
+  { name: "美人沙灘", emoji: "🏖️", category: "beach", description: "北岸細沙海灘，適合傍晚散步。", lat: 22.35271, lng: 120.37133, distance_order: 4 },
+  { name: "美人洞", emoji: "🌊", category: "trail", description: "海蝕地形與步道群，環境教育導覽熱點。", lat: 22.35334, lng: 120.37257, distance_order: 5 },
+  { name: "望海亭", emoji: "👀", category: "viewpoint", description: "美人洞園區制高點，可俯瞰北岸海域。", lat: 22.35318, lng: 120.37320, distance_order: 6 },
+  { name: "肚仔坪潮間帶", emoji: "🐚", category: "intertidal", description: "保育示範區，需付觀光保育費並由合格導覽人員帶領。", lat: 22.34883, lng: 120.36381, distance_order: 7 },
+  { name: "杉福潮間帶", emoji: "🐢", category: "intertidal", description: "保育示範區，冬季休養期禁止進入。", lat: 22.34332, lng: 120.36203, distance_order: 8 },
+  { name: "杉福生態廊道", emoji: "🌿", category: "trail", description: "由軍事坑道改建的濱海步道。", lat: 22.34311, lng: 120.36258, distance_order: 9 },
+  { name: "蛤板灣（威尼斯沙灘）", emoji: "🏝️", category: "beach", description: "貝殼砂海灣，島上知名的看夕陽地點。", lat: 22.33428, lng: 120.35996, distance_order: 10 },
+  { name: "山豬溝", emoji: "🌿", category: "forest", description: "珊瑚礁裂谷與原生林步道，島上重要的生態教室。", lat: 22.33777, lng: 120.36197, distance_order: 11 },
+  { name: "烏鬼洞", emoji: "🪨", category: "trail", description: "結合歷史故事與珊瑚礁地形的園區。", lat: 22.33019, lng: 120.35648, distance_order: 12 },
+  { name: "落日亭", emoji: "🌅", category: "viewpoint", description: "西南岸最佳日落觀景點。", lat: 22.32481, lng: 120.35341, distance_order: 13 },
+  { name: "觀音石", emoji: "🪨", category: "landmark", description: "南端酷似觀音側影的礁岩地景。", lat: 22.32284, lng: 120.36167, distance_order: 14 },
+  { name: "白燈塔（琉球嶼燈塔）", emoji: "🗼", category: "landmark", description: "島上制高處的百年燈塔，適合自行車途經。", lat: 22.32890, lng: 120.36642, distance_order: 15 },
+  { name: "紅番石", emoji: "🪨", category: "landmark", description: "東南岸厚石裙礁一帶的礁岩地景。（座標為概略值，待實地校正）", lat: 22.32690, lng: 120.36900, distance_order: 16 },
+  { name: "大福漁港（大福碼頭）", emoji: "⚓", category: "port", description: "鹽琉線公營交通船停靠的琉球新港，免稅商品也可在此提領。", lat: 22.33420, lng: 120.37461, distance_order: 17 },
+  { name: "碧雲寺", emoji: "🏮", category: "culture", description: "島上信仰中心，鄰近旅遊資訊站。", lat: 22.33806, lng: 120.36982, distance_order: 18 },
+  { name: "百年老榕樹", emoji: "🌳", category: "landmark", description: "在地信仰與生活記憶交會的老樹。（座標為概略值，待實地校正）", lat: 22.34350, lng: 120.37650, distance_order: 19 },
+  { name: "旭日亭", emoji: "🌅", category: "viewpoint", description: "東岸日出觀景亭，清晨步行剛剛好。", lat: 22.34012, lng: 120.38187, distance_order: 20 },
+  { name: "龍蝦洞", emoji: "🦞", category: "landmark", description: "東岸海蝕溝地形，浪大時請勿靠近。", lat: 22.34545, lng: 120.38726, distance_order: 21 },
+  { name: "中澳沙灘", emoji: "🌊", category: "beach", description: "海龜常出沒的沙灘，請保持距離、勿觸摸。", lat: 22.34980, lng: 120.38873, distance_order: 22 }
 ];
 
 const MODES = [
@@ -33,24 +36,26 @@ const MODES = [
 ];
 
 const SHOPS = [
-  { name: "琉球鄉農會生鮮超市", category: "farm", type: "農產", description: "販售在地與屏東小農蔬果、加工品，食物里程短。", address: "屏東縣琉球鄉中山路 71 號", phone: "08-861-2016", hours: "08:00–20:00", lat: 22.3441, lng: 120.3771, tags: "在地農產,短程運輸,責任消費" },
-  { name: "三民老街在地果乾攤", category: "farm", type: "農產加工", description: "以島上與屏東本島水果製作的果乾，可自備容器裝盛。", address: "屏東縣琉球鄉三民路", phone: "", hours: "10:00–21:00", lat: 22.3438, lng: 120.3778, tags: "自備容器,低包裝,在地食材" },
-  { name: "海島風味友善餐桌", category: "farm", type: "餐飲", description: "使用在地漁獲與小農蔬菜的無菜單料理。", address: "屏東縣琉球鄉民生路", phone: "", hours: "11:30–20:00", lat: 22.3452, lng: 120.3760, tags: "在地食材,友善海洋,低包裝" },
-  { name: "琉球雜貨散裝販賣所", category: "farm", type: "零售", description: "乾貨與調味品散裝販售，鼓勵自備袋具。", address: "屏東縣琉球鄉中山路", phone: "", hours: "09:00–19:00", lat: 22.3435, lng: 120.3766, tags: "散裝,減塑,自備袋" },
+  // 在地小農／在地食品店家（由團隊實地整理，座標以 OpenStreetMap 門牌定位）
+  { name: "琉球鄉農會", category: "farm", type: "在地農產", description: "販售在地與屏東小農蔬果、加工品，食物里程短。", address: "屏東縣琉球鄉本福村民生路 3 號", phone: "08-861-2016", hours: "08:00–17:00", lat: 22.35057, lng: 120.37976, tags: "在地農產,短程運輸,責任消費" },
+  { name: "QQ妹傳統手工麻花捲", category: "farm", type: "🍪 在地食品", description: "傳統手工製作的麻花捲，可自備容器裝盛減少包裝。", address: "屏東縣琉球鄉漁福村三民路 112 號", phone: "", hours: "09:00–21:00", lat: 22.34993, lng: 120.38660, tags: "在地食品,手工製作,自備容器" },
+  { name: "小琉球有鱻鬼頭刀魚乾", category: "farm", type: "🐟 漁產加工", description: "以在地漁獲製作的鬼頭刀魚乾，支持島上漁業。", address: "屏東縣琉球鄉漁福村三民路 117-6 號", phone: "", hours: "09:00–20:00", lat: 22.34816, lng: 120.38744, tags: "在地漁產,漁產加工,友善海洋" },
+  { name: "蜜仔蕃薯糖", category: "farm", type: "🍠 地方特產", description: "白沙觀光港內的地方特產店，也是琉行杯的合作店家。", address: "屏東縣琉球鄉白沙觀光港 4 號商店", phone: "", hours: "08:00–18:00", lat: 22.35230, lng: 120.38430, tags: "地方特產,在地食品,琉行杯合作" },
+  { name: "龍興行", category: "farm", type: "🐟 在地海產", description: "在地食品與海產，販售島上與周邊海域的漁產加工品。", address: "屏東縣琉球鄉（詳細地址待補）", phone: "", hours: "", lat: 22.35180, lng: 120.38270, tags: "在地海產,在地食品" },
 
-  { name: "咕咕碗租借站 — 白沙尾遊客中心", category: "bowl", type: "環保餐盒租借", description: "上島第一站即可借用環保餐盒，離島前歸還。", address: "屏東縣琉球鄉白沙尾觀光港旁", phone: "", hours: "08:00–17:00", lat: 22.3533, lng: 120.3770, tags: "環保餐盒,甲地借乙地還,免押金" },
-  { name: "咕咕碗租借站 — 三民老街", category: "bowl", type: "環保餐盒租借", description: "老街小吃最密集的租借點，買小吃前先借碗。", address: "屏東縣琉球鄉三民路", phone: "", hours: "10:00–21:00", lat: 22.3439, lng: 120.3780, tags: "環保餐盒,減少一次性餐具" },
-  { name: "咕咕碗租借站 — 中山路商圈", category: "bowl", type: "環保餐盒租借", description: "鄰近農會與便利商店，適合外帶正餐。", address: "屏東縣琉球鄉中山路", phone: "", hours: "09:00–20:00", lat: 22.3444, lng: 120.3762, tags: "環保餐盒,外帶,減塑" },
+  { name: "咕咕碗租借站 — 白沙尾遊客中心", category: "bowl", type: "環保餐盒租借", description: "上島第一站即可借用環保餐盒，離島前歸還。", address: "屏東縣琉球鄉白沙尾觀光港旁", phone: "", hours: "08:00–17:00", lat: 22.35245, lng: 120.38420, tags: "環保餐盒,甲地借乙地還,免押金" },
+  { name: "咕咕碗租借站 — 三民老街", category: "bowl", type: "環保餐盒租借", description: "老街小吃最密集的租借點，買小吃前先借碗。", address: "屏東縣琉球鄉三民路", phone: "", hours: "10:00–21:00", lat: 22.34999, lng: 120.38635, tags: "環保餐盒,減少一次性餐具" },
+  { name: "咕咕碗租借站 — 中山路商圈", category: "bowl", type: "環保餐盒租借", description: "鄰近農會與便利商店，適合外帶正餐。", address: "屏東縣琉球鄉中山路", phone: "", hours: "09:00–20:00", lat: 22.35190, lng: 120.38210, tags: "環保餐盒,外帶,減塑" },
 
-  { name: "琉行杯租借點 — 白沙尾港前", category: "cup", type: "環保杯租借", description: "全島超過 80 處租借點之一，可甲地借乙地還。", address: "屏東縣琉球鄉白沙尾觀光港", phone: "", hours: "08:00–18:00", lat: 22.3536, lng: 120.3778, tags: "琉行杯,共享,甲借乙還" },
-  { name: "琉行杯租借點 — 三民老街飲料店", category: "cup", type: "環保杯租借", description: "配合店家提供自備杯折扣，減少一次性飲料杯。", address: "屏東縣琉球鄉三民路", phone: "", hours: "10:00–21:00", lat: 22.3437, lng: 120.3783, tags: "琉行杯,自備杯折扣" },
-  { name: "琉行杯租借點 — 中山路咖啡館", category: "cup", type: "環保杯租借", description: "借杯買飲料享折扣的合作店家。", address: "屏東縣琉球鄉中山路", phone: "", hours: "09:00–18:00", lat: 22.3446, lng: 120.3768, tags: "琉行杯,咖啡,減塑" },
-  { name: "琉行杯租借點 — 美人洞商店", category: "cup", type: "環保杯租借", description: "景點旁補水與借杯站，減少寶特瓶。", address: "屏東縣琉球鄉美人洞園區", phone: "", hours: "08:00–17:30", lat: 22.3519, lng: 120.3688, tags: "琉行杯,飲水補給" },
+  { name: "琉行杯租借點 — 白沙尾港前", category: "cup", type: "環保杯租借", description: "全島超過 80 處租借點之一，可甲地借乙地還。", address: "屏東縣琉球鄉白沙尾觀光港", phone: "", hours: "08:00–18:00", lat: 22.35258, lng: 120.38452, tags: "琉行杯,共享,甲借乙還" },
+  { name: "琉行杯租借點 — 三民路飲料店", category: "cup", type: "環保杯租借", description: "配合店家提供自備杯折扣，減少一次性飲料杯。", address: "屏東縣琉球鄉三民路", phone: "", hours: "10:00–21:00", lat: 22.34960, lng: 120.38690, tags: "琉行杯,自備杯折扣" },
+  { name: "琉行杯租借點 — 中山路咖啡館", category: "cup", type: "環保杯租借", description: "借杯買飲料享折扣的合作店家。", address: "屏東縣琉球鄉中山路", phone: "", hours: "09:00–18:00", lat: 22.35225, lng: 120.38255, tags: "琉行杯,咖啡,減塑" },
+  { name: "琉行杯租借點 — 美人洞商店", category: "cup", type: "環保杯租借", description: "景點旁補水與借杯站，減少寶特瓶。", address: "屏東縣琉球鄉美人洞園區", phone: "", hours: "08:00–17:30", lat: 22.35330, lng: 120.37270, tags: "琉行杯,飲水補給" },
 
-  { name: "電動機車租借 — 白沙尾港站", category: "ev", type: "綠色運具", description: "下船即可租借電動機車，島上設有多處充電站。", address: "屏東縣琉球鄉白沙尾觀光港", phone: "", hours: "07:30–18:30", lat: 22.3532, lng: 120.3781, tags: "電動機車,APP 租借,低碳運具" },
-  { name: "電動機車充電站 — 美人洞", category: "ev", type: "充電站", description: "景點旁快充站，約 10 分鐘可補充里程。", address: "屏東縣琉球鄉美人洞園區", phone: "", hours: "24 小時", lat: 22.3523, lng: 120.3681, tags: "快充,電動機車" },
-  { name: "電動機車充電站 — 烏鬼洞", category: "ev", type: "充電站", description: "南環路線的補電點，適合環島中途停靠。", address: "屏東縣琉球鄉烏鬼洞園區", phone: "", hours: "24 小時", lat: 22.3327, lng: 120.3620, tags: "快充,環島" },
-  { name: "電動自行車租借 — 中山路", category: "ev", type: "綠色運具", description: "提供電輔自行車，適合短程與親子同行。", address: "屏東縣琉球鄉中山路", phone: "", hours: "08:00–19:00", lat: 22.3448, lng: 120.3758, tags: "電輔自行車,短程,低碳運具" }
+  { name: "電動機車租借 — 白沙尾港站", category: "ev", type: "綠色運具", description: "下船即可租借電動機車，島上設有多處充電站。", address: "屏東縣琉球鄉白沙尾觀光港", phone: "", hours: "07:30–18:30", lat: 22.35240, lng: 120.38390, tags: "電動機車,APP 租借,低碳運具" },
+  { name: "電動機車充電站 — 美人洞", category: "ev", type: "充電站", description: "景點旁快充站，約 10 分鐘可補充里程。", address: "屏東縣琉球鄉美人洞園區", phone: "", hours: "24 小時", lat: 22.35340, lng: 120.37230, tags: "快充,電動機車" },
+  { name: "電動機車充電站 — 烏鬼洞", category: "ev", type: "充電站", description: "南環路線的補電點，適合環島中途停靠。", address: "屏東縣琉球鄉烏鬼洞園區", phone: "", hours: "24 小時", lat: 22.33030, lng: 120.35670, tags: "快充,環島" },
+  { name: "電動自行車租借 — 大福漁港", category: "ev", type: "綠色運具", description: "鹽琉線旅客的租借點，提供電輔自行車。", address: "屏東縣琉球鄉大福漁港", phone: "", hours: "08:00–19:00", lat: 22.33430, lng: 120.37450, tags: "電輔自行車,短程,低碳運具" }
 ];
 
 const ACTIONS = [

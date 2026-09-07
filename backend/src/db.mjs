@@ -15,7 +15,7 @@ db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
 
 // 內容表（景點、店家、行動、文章…）的結構版本。改動這些表的欄位時把數字 +1，
 // 啟動時就會自動重建並重新 seed。使用者資料表（users / sessions / 進度 / 紀錄）永遠不動。
-const CONTENT_SCHEMA_VERSION = 4;
+const CONTENT_SCHEMA_VERSION = 5;
 const CONTENT_TABLES = ["places", "transport_modes", "sustainable_shops", "plastic_actions", "articles"];
 
 function resetContentTablesIfOutdated() {
