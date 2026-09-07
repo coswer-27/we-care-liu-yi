@@ -1,0 +1,23 @@
+# Render Blueprint — 在 Render 選「New → Blueprint」並指向這個 repo 就會照著建立服務。
+services:
+  - type: web
+    name: liu-yi-green-traveler
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      # 專案使用 Node 24 內建的 node:sqlite，版本不能低於 24。
+      - key: NODE_VERSION
+        value: "24"
+      # 以下留空即可：路線會自動使用免金鑰的 OSRM，地圖使用 OpenStreetMap。
+      # 之後要升級再到 Render 後台的 Environment 填入。
+      - key: ORS_API_KEY
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: GOOGLE_MAPS_BROWSER_KEY
+        sync: false

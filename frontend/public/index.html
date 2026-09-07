@@ -1,114 +1,63 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>頂琉計畫 | 琉意健康 綠行琉客</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta
+      name="description"
+      content="頂琉計畫：琉意健康 綠行琉客。小琉球低碳旅遊平台，提供碳足跡計算、低碳路線規劃、永續店家地圖與海龜養成計畫。"
+    />
+    <title>頂琉計畫｜琉意健康 綠行琉客</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐢</text></svg>" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <a class="brand" href="#home" aria-label="頂琉計畫首頁">
-        <span class="brand-mark">龜</span>
-        <span><strong>頂琉計畫</strong><small>低碳旅遊 · 琉行旅客</small></span>
-      </a>
-      <nav>
-        <a href="#calculator">碳足跡</a>
-        <a href="#routes">低碳路線</a>
-        <a href="#actions">永續行動</a>
-        <a href="#news">最新消息</a>
-      </nav>
+    <a class="skip-link" href="#view">跳到主要內容</a>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="#/" aria-label="頂琉計畫首頁">
+          <span class="brand-mark" aria-hidden="true">🐢</span>
+          <span class="brand-text">
+            <strong>頂琉計畫</strong>
+            <small>低碳旅遊 · 琉行旅客</small>
+          </span>
+        </a>
+
+        <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="primaryNav" aria-label="開啟選單">
+          <span aria-hidden="true"></span>
+        </button>
+
+        <nav class="primary-nav" id="primaryNav" aria-label="主要導覽">
+          <a href="#/" data-route="/">首頁</a>
+          <a href="#/about" data-route="/about">關於小琉球</a>
+          <a href="#/travel" data-route="/travel">低碳旅遊</a>
+          <a href="#/actions" data-route="/actions">永續行動</a>
+          <a class="nav-turtle" href="#/turtle" data-route="/turtle"><span aria-hidden="true">🐢</span> 海龜養成計畫</a>
+          <a href="#/news" data-route="/news">最新消息</a>
+          <a href="#/team" data-route="/team">關於我們</a>
+          <div class="nav-account" id="navAccount"></div>
+        </nav>
+      </div>
     </header>
 
-    <main id="home">
-      <section class="hero">
-        <div>
-          <p class="eyebrow">小琉球永續旅遊平台</p>
-          <h1>一起減碳，守護小琉球</h1>
-          <p class="lede">把交通選擇、減塑行動、在地消費與海洋教育串成一個可維護的公共網站系統。</p>
-        </div>
-        <div class="turtle-panel" aria-live="polite">
-          <span class="turtle">🐢</span>
-          <div>
-            <strong id="turtleStage">幼龜</strong>
-            <p>海龜生命值 <span id="turtleLife">0</span> / 1000</p>
-            <div class="meter"><span id="lifeMeter"></span></div>
-          </div>
-        </div>
-      </section>
+    <main id="view" tabindex="-1"></main>
 
-      <section class="dashboard" id="calculator">
-        <article class="tool-panel">
-          <div class="section-heading">
-            <p class="eyebrow">Carbon Calculator</p>
-            <h2>碳足跡計算</h2>
-          </div>
-          <form id="carbonForm">
-            <label>
-              起點
-              <select id="startPlace" required></select>
-            </label>
-            <label>
-              終點
-              <select id="endPlace" required></select>
-            </label>
-            <fieldset>
-              <legend>交通方式</legend>
-              <div class="mode-grid" id="transportModes"></div>
-            </fieldset>
-            <button type="submit">開始計算</button>
-          </form>
-          <div class="result" id="carbonResult">
-            <span>選擇旅程後會顯示排碳與點數。</span>
-          </div>
-        </article>
+    <footer class="site-footer">
+      <div class="footer-values">
+        <div><span aria-hidden="true">👣</span><strong>低碳旅遊</strong><small>減少碳足跡</small></div>
+        <div><span aria-hidden="true">🐢</span><strong>海龜養成</strong><small>守護海龜與海洋</small></div>
+        <div><span aria-hidden="true">🌱</span><strong>責任消費</strong><small>支持在地永續</small></div>
+        <div><span aria-hidden="true">🌏</span><strong>永續未來</strong><small>一起讓地球更好</small></div>
+      </div>
+      <p class="footer-note">
+        頂琉計畫：琉意健康 綠行琉客 — 琉行旅客團隊。碳排係數與景點座標為規劃階段的參考值，實際數據以官方公告為準。
+      </p>
+    </footer>
 
-        <article class="tool-panel accent-blue">
-          <div class="section-heading">
-            <p class="eyebrow">Turtle Growth</p>
-            <h2>海龜養成互動</h2>
-          </div>
-          <p>選擇低碳交通、減塑行動或支持永續店家，會累積生命值並解鎖知識與獎勵。</p>
-          <div class="stage-row">
-            <span>蛋</span><span>幼龜</span><span>青龜</span><span>成龜</span>
-          </div>
-        </article>
-      </section>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-      <section id="routes" class="content-band">
-        <div class="section-heading">
-          <p class="eyebrow">Routes</p>
-          <h2>低碳路線推薦</h2>
-        </div>
-        <div class="place-grid" id="placeGrid"></div>
-      </section>
-
-      <section id="actions" class="split-band">
-        <div>
-          <div class="section-heading">
-            <p class="eyebrow">Plastic Reduction</p>
-            <h2>減塑行動指南</h2>
-          </div>
-          <div id="actionList" class="list"></div>
-        </div>
-        <div>
-          <div class="section-heading">
-            <p class="eyebrow">Local Shops</p>
-            <h2>在地永續店家</h2>
-          </div>
-          <div id="shopList" class="list"></div>
-        </div>
-      </section>
-
-      <section id="news" class="content-band">
-        <div class="section-heading">
-          <p class="eyebrow">Education</p>
-          <h2>環境教育與最新消息</h2>
-        </div>
-        <div id="articleList" class="article-grid"></div>
-      </section>
-    </main>
-
-    <script type="module" src="/app.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>
