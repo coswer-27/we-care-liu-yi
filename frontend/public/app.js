@@ -192,11 +192,11 @@ function homePage() {
         <p class="eyebrow">低碳旅遊 × 海洋保育 × 永續未來</p>
         <h1>一起減碳 · 守護小琉球</h1>
         <p class="lede">
-          計算你的旅程碳足跡、規劃低碳路線、支持在地永續店家，
-          把每一次選擇都變成海龜的生命值。
+          開始規劃低碳路線、支持在地永續店家、計算你的碳足跡，
+          每一次選擇都變成海龜的生命值，一起完成海龜養成計畫。
         </p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="#/travel">開始計算碳足跡</a>
+          <a class="btn btn-primary" href="#/travel">開始低碳旅遊</a>
           <a class="btn btn-ghost" href="#/turtle">🐢 海龜養成計畫</a>
         </div>
       </div>
@@ -221,7 +221,7 @@ function homePage() {
       </a>
       <a class="feature-card" href="#/turtle">
         <span class="feature-icon" aria-hidden="true">🐢</span>
-        <h2>海龜養成互動</h2>
+        <h2>海龜養成計畫</h2>
         <p>把減碳行動轉換成海龜生命值，一起陪牠從龜蛋長成成龜。</p>
       </a>
       <a class="feature-card" href="#/actions">
@@ -231,17 +231,17 @@ function homePage() {
       </a>
       <a class="feature-card" href="#/travel">
         <span class="feature-icon" aria-hidden="true">🚲</span>
-        <h2>低碳路線推薦</h2>
+        <h2>低碳路線規劃</h2>
         <p>精選路線可直接套用，也能自訂點位數量規劃專屬行程。</p>
       </a>
       <a class="feature-card" href="#/actions">
         <span class="feature-icon" aria-hidden="true">🏪</span>
-        <h2>在地永續店家</h2>
-        <p>在地小農、友善餐桌與電動車租借站，用消費支持在地。</p>
+        <h2>在地小農店家</h2>
+        <p>農會、在地食品與漁產加工店家，用消費支持在地永續。</p>
       </a>
       <a class="feature-card" href="#/news">
         <span class="feature-icon" aria-hidden="true">📖</span>
-        <h2>環境教育專欄</h2>
+        <h2>最新消息與環境教育</h2>
         <p>海龜保育、潮間帶管理與減塑政策的最新報導。</p>
       </a>
     </section>
@@ -613,7 +613,7 @@ function teamPage() {
         <p>把「低碳旅遊」從口號變成可以量化、可以累積的日常選擇，讓旅客在規劃行程時就看得見自己的碳足跡。</p>
       </article>
       <article class="prose-card">
-        <h2>為什麼是小琉球</h2>
+        <h2>從小琉球開始</h2>
         <p>島嶼尺度小、景點集中、步行與自行車可及，同時面臨明確的觀光壓力，是實踐低碳旅遊最合適的場域。</p>
       </article>
       <article class="prose-card">
