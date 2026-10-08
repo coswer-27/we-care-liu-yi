@@ -32,7 +32,9 @@ npm run dev
 | `GOOGLE_MAPS_BROWSER_KEY` | 前端 Google Maps JavaScript API 金鑰 | 使用 Leaflet + OpenStreetMap |
 | `ROUTING_PROVIDER` | 強制指定路線來源：`google` / `ors` / `osrm` / `estimate` | 自動選擇 |
 | `OSRM_BASE_URL` | 自架 OSRM 伺服器位址 | 官方公開伺服器 |
-| `DB_PATH` | 指定資料庫檔案位置 | `backend/data/app.db` |
+| `TURSO_DATABASE_URL` | Turso 雲端資料庫位址（免費、免信用卡） | 用本機 SQLite 檔 |
+| `TURSO_AUTH_TOKEN` | Turso 存取權杖 | 同上 |
+| `DB_PATH` | 本機 SQLite 檔案位置 | `backend/data/app.db` |
 
 ## 功能
 
@@ -44,6 +46,32 @@ npm run dev
 - **永續行動**：在地小農店家、咕咕碗租借點、琉行杯租借點、電動車出租站四個分頁，各自附地圖與導航
 - **減塑行動指南**：每項行動每天可打卡一次，直接累積生命值
 - **最新消息**：7 篇整理自公開網路來源的報導，均標明出處並連結原文
+
+## 資料庫
+
+程式支援兩種資料庫，啟動時會印出正在用哪一種：
+
+- **本機 SQLite 檔**（預設）— 開發用，不需要任何設定
+- **Turso**（設了 `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` 時）— SQLite 相容的雲端資料庫，透過內建 `fetch` 呼叫其 HTTP API，不需要任何 npm 套件
+
+兩者的 SQL 完全相同，差別只在 `backend/src/sql.mjs` 裡的驅動。
+
+### 正式環境一定要用 Turso
+
+Render 免費方案的檔案系統是暫時的。依照 [Render 官方文件](https://render.com/docs/free)，檔案「每次服務重新部署、重新啟動或休眠時都會遺失」，而免費服務閒置 15 分鐘就會休眠 —— 也就是說，**用本機 SQLite 檔部署的話，使用者帳號與海龜養成進度每 15 分鐘就會全部消失**。
+
+### 建立 Turso 資料庫
+
+1. 到 [turso.tech](https://turso.tech) 用 GitHub 登入（免費方案不需要信用卡）。
+2. 建立一個資料庫，區域選離台灣最近的（例如 Singapore 或 Tokyo）。
+3. 在資料庫頁面取得兩個值：
+   - **Database URL**（長得像 `libsql://xxx-yyy.turso.io`）
+   - **Auth Token**（按 Create Token 產生）
+4. 本機開發：填進 `.env`。正式環境：填到 Render 後台的 **Environment**，存檔後它會自動重新部署。
+
+啟動訊息出現「資料庫：Turso（…）— 資料永久保存」就代表接上了。
+
+免費方案額度為 5GB 儲存、每月 5 億次讀取與 1000 萬次寫入，這個專案的用量遠低於上限。
 
 ## 路線服務
 

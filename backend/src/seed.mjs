@@ -1,4 +1,4 @@
-import { db, migrate } from "./db.mjs";
+import { batch, get, migrate } from "./db.mjs";
 
 // 座標取自 OpenStreetMap（Nominatim 查詢），除了下方註記「概略」的兩處之外，
 // 都是官方或社群標定的實際位置。
@@ -129,47 +129,45 @@ const ARTICLES = [
   }
 ];
 
-function seedTable(table, rows, insertSql) {
-  const count = db.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get().count;
-  if (count > 0) return;
-  const insert = db.prepare(insertSql);
-  db.exec("BEGIN");
-  for (const row of rows) insert.run(row);
-  db.exec("COMMIT");
+/** 只在資料表為空時寫入；所有 INSERT 併成一次 batch，Turso 才不用來回幾十趟。 */
+async function seedTable(table, rows, insertSql) {
+  const existing = await get(`SELECT COUNT(*) AS count FROM ${table}`);
+  if (existing.count > 0) return;
+  await batch(rows.map((row) => ({ sql: insertSql, params: row })));
 }
 
-export function seed() {
-  migrate();
+export async function seed() {
+  await migrate();
 
-  seedTable(
+  await seedTable(
     "places",
     PLACES,
     `INSERT INTO places (name, emoji, category, description, lat, lng, distance_order)
      VALUES (:name, :emoji, :category, :description, :lat, :lng, :distance_order)`
   );
 
-  seedTable(
+  await seedTable(
     "transport_modes",
     MODES,
     `INSERT INTO transport_modes (id, name, icon, google_mode, kg_co2_per_km, points_per_kg_saved)
      VALUES (:id, :name, :icon, :google_mode, :kg_co2_per_km, :points_per_kg_saved)`
   );
 
-  seedTable(
+  await seedTable(
     "sustainable_shops",
     SHOPS,
     `INSERT INTO sustainable_shops (name, category, type, description, address, phone, hours, lat, lng, tags)
      VALUES (:name, :category, :type, :description, :address, :phone, :hours, :lat, :lng, :tags)`
   );
 
-  seedTable(
+  await seedTable(
     "plastic_actions",
     ACTIONS,
     `INSERT INTO plastic_actions (title, description, points, co2_saved_kg)
      VALUES (:title, :description, :points, :co2_saved_kg)`
   );
 
-  seedTable(
+  await seedTable(
     "articles",
     ARTICLES,
     `INSERT INTO articles (title, category, summary, source, url, published_at)
@@ -177,7 +175,8 @@ export function seed() {
   );
 }
 
-if (process.argv[1] && process.argv[1].replace(/\\/g, "/").endsWith("seed.mjs")) {
-  seed();
+if (process.argv[1] && process.argv[1].replaceAll("\\", "/").endsWith("seed.mjs")) {
+  await import("./env.mjs");
+  await seed();
   console.log("Seed completed.");
 }

@@ -16,11 +16,11 @@ export function verifyPassword(password, storedHash, salt) {
   return timingSafeEqual(candidate, expected);
 }
 
-export function createSession(userId) {
+export async function createSession(userId) {
   const token = randomBytes(32).toString("hex");
   const now = new Date();
   const expires = new Date(now.getTime() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  run(
+  await run(
     `INSERT INTO sessions (token, user_id, created_at, expires_at)
      VALUES (:token, :user_id, :created_at, :expires_at)`,
     { token, user_id: userId, created_at: now.toISOString(), expires_at: expires.toISOString() }
@@ -28,8 +28,8 @@ export function createSession(userId) {
   return { token, expires };
 }
 
-export function destroySession(token) {
-  if (token) run("DELETE FROM sessions WHERE token = :token", { token });
+export async function destroySession(token) {
+  if (token) await run("DELETE FROM sessions WHERE token = :token", { token });
 }
 
 function parseCookies(header = "") {
@@ -47,19 +47,22 @@ export function readSessionToken(req) {
 }
 
 /** Returns the logged-in user for this request, or null. Expired sessions are cleaned up. */
-export function currentUser(req) {
+export async function currentUser(req) {
   const token = readSessionToken(req);
   if (!token) return null;
 
-  const session = get("SELECT * FROM sessions WHERE token = :token", { token });
+  const session = await get("SELECT * FROM sessions WHERE token = :token", { token });
   if (!session) return null;
 
   if (new Date(session.expires_at).getTime() < Date.now()) {
-    destroySession(token);
+    await destroySession(token);
     return null;
   }
 
-  return get("SELECT id, email, display_name, created_at FROM users WHERE id = :id", { id: session.user_id }) || null;
+  const user = await get("SELECT id, email, display_name, created_at FROM users WHERE id = :id", {
+    id: session.user_id
+  });
+  return user || null;
 }
 
 export function sessionCookie(token, expires, secure) {

@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { dirname, extname, join, normalize } from "node:path";
 import { URL, fileURLToPath } from "node:url";
-import { all, get, migrate, run } from "./db.mjs";
+import { all, batch, describeDriver, get, migrate, run } from "./db.mjs";
 import { seed } from "./seed.mjs";
 import {
   clearedCookie,
@@ -120,8 +120,9 @@ function carbonFor(distanceKm, mode) {
   return { estimatedKg, savedKg, points: Math.round(savedKg * mode.points_per_kg_saved) };
 }
 
-function modeComparison(distanceKm) {
-  return all("SELECT * FROM transport_modes ORDER BY kg_co2_per_km").map((mode) => ({
+async function modeComparison(distanceKm) {
+  const modes = await all("SELECT * FROM transport_modes ORDER BY kg_co2_per_km");
+  return modes.map((mode) => ({
     id: mode.id,
     name: mode.name,
     icon: mode.icon,
@@ -129,8 +130,11 @@ function modeComparison(distanceKm) {
   }));
 }
 
-function loadPlaces(ids) {
-  return ids.map((id) => get("SELECT * FROM places WHERE id = :id", { id: Number(id) })).filter(Boolean);
+async function loadPlaces(ids) {
+  const rows = await Promise.all(
+    ids.map((id) => get("SELECT * FROM places WHERE id = :id", { id: Number(id) }))
+  );
+  return rows.filter(Boolean);
 }
 
 async function handle(req, res) {
@@ -163,29 +167,30 @@ async function handle(req, res) {
   // ---------- 內容 ----------
 
   if (method === "GET" && pathname === "/api/home") {
-    return send(req, res, 200, {
-      places: all("SELECT * FROM places ORDER BY distance_order"),
-      modes: all("SELECT * FROM transport_modes ORDER BY kg_co2_per_km"),
-      shops: all("SELECT * FROM sustainable_shops ORDER BY category, id"),
-      actions: all("SELECT * FROM plastic_actions ORDER BY points DESC"),
-      articles: all("SELECT * FROM articles ORDER BY published_at DESC")
-    });
+    const [places, modes, shops, actions, articles] = await batch([
+      { sql: "SELECT * FROM places ORDER BY distance_order" },
+      { sql: "SELECT * FROM transport_modes ORDER BY kg_co2_per_km" },
+      { sql: "SELECT * FROM sustainable_shops ORDER BY category, id" },
+      { sql: "SELECT * FROM plastic_actions ORDER BY points DESC" },
+      { sql: "SELECT * FROM articles ORDER BY published_at DESC" }
+    ]);
+    return send(req, res, 200, { places, modes, shops, actions, articles });
   }
 
   if (method === "GET" && pathname === "/api/places") {
-    return send(req, res, 200, { places: all("SELECT * FROM places ORDER BY distance_order") });
+    return send(req, res, 200, { places: await all("SELECT * FROM places ORDER BY distance_order") });
   }
 
   if (method === "GET" && pathname === "/api/shops") {
     const category = url.searchParams.get("category");
     const shops = category
-      ? all("SELECT * FROM sustainable_shops WHERE category = :category ORDER BY id", { category })
-      : all("SELECT * FROM sustainable_shops ORDER BY category, id");
+      ? await all("SELECT * FROM sustainable_shops WHERE category = :category ORDER BY id", { category })
+      : await all("SELECT * FROM sustainable_shops ORDER BY category, id");
     return send(req, res, 200, { shops });
   }
 
   if (method === "GET" && pathname === "/api/articles") {
-    return send(req, res, 200, { articles: all("SELECT * FROM articles ORDER BY published_at DESC") });
+    return send(req, res, 200, { articles: await all("SELECT * FROM articles ORDER BY published_at DESC") });
   }
 
   // ---------- 帳號 ----------
@@ -197,24 +202,24 @@ async function handle(req, res) {
     const errors = validateCredentials({ email, password: body.password, displayName }, { requireName: true });
     if (errors.length) return send(req, res, 400, { error: errors[0] });
 
-    if (get("SELECT id FROM users WHERE email = :email", { email })) {
+    if (await get("SELECT id FROM users WHERE email = :email", { email })) {
       return send(req, res, 409, { error: "這個電子郵件已經註冊過了。" });
     }
 
     const { hash, salt } = hashPassword(body.password);
-    run(
+    await run(
       `INSERT INTO users (email, display_name, password_hash, password_salt, created_at)
        VALUES (:email, :display_name, :hash, :salt, :now)`,
       { email, display_name: displayName, hash, salt, now: new Date().toISOString() }
     );
 
-    const user = get("SELECT * FROM users WHERE email = :email", { email });
-    const { token, expires } = createSession(user.id);
+    const user = await get("SELECT * FROM users WHERE email = :email", { email });
+    const { token, expires } = await createSession(user.id);
     return send(
       req,
       res,
       201,
-      { user: publicUser(user), turtle: progressFor(user.id) },
+      { user: publicUser(user), turtle: await progressFor(user.id) },
       { "Set-Cookie": sessionCookie(token, expires, isSecure(req)) }
     );
   }
@@ -222,56 +227,53 @@ async function handle(req, res) {
   if (method === "POST" && pathname === "/api/auth/login") {
     const body = await parseBody(req);
     const email = String(body.email || "").trim().toLowerCase();
-    const user = get("SELECT * FROM users WHERE email = :email", { email });
+    const user = await get("SELECT * FROM users WHERE email = :email", { email });
 
     if (!user || !verifyPassword(String(body.password || ""), user.password_hash, user.password_salt)) {
       return send(req, res, 401, { error: "電子郵件或密碼不正確。" });
     }
 
-    const { token, expires } = createSession(user.id);
+    const { token, expires } = await createSession(user.id);
     return send(
       req,
       res,
       200,
-      { user: publicUser(user), turtle: progressFor(user.id) },
+      { user: publicUser(user), turtle: await progressFor(user.id) },
       { "Set-Cookie": sessionCookie(token, expires, isSecure(req)) }
     );
   }
 
   if (method === "POST" && pathname === "/api/auth/logout") {
-    destroySession(readSessionToken(req));
+    await destroySession(readSessionToken(req));
     return send(req, res, 200, { ok: true }, { "Set-Cookie": clearedCookie(isSecure(req)) });
   }
 
   if (method === "GET" && pathname === "/api/auth/me") {
-    const user = currentUser(req);
+    const user = await currentUser(req);
     if (!user) return send(req, res, 200, { user: null });
-    return send(req, res, 200, { user: publicUser(user), turtle: progressFor(user.id) });
+    return send(req, res, 200, { user: publicUser(user), turtle: await progressFor(user.id) });
   }
 
   // ---------- 海龜養成（需登入） ----------
 
   if (pathname.startsWith("/api/turtle")) {
-    const user = currentUser(req);
+    const user = await currentUser(req);
     if (!user) return send(req, res, 401, { error: "請先登入才能查看海龜養成計畫。" });
 
     if (method === "GET" && pathname === "/api/turtle") {
-      return send(req, res, 200, {
-        user: publicUser(user),
-        turtle: progressFor(user.id),
-        history: historyFor(user.id)
-      });
+      const [turtle, history] = await Promise.all([progressFor(user.id), historyFor(user.id)]);
+      return send(req, res, 200, { user: publicUser(user), turtle, history });
     }
 
     if (method === "POST" && pathname === "/api/turtle/actions") {
       const body = await parseBody(req);
-      const action = get("SELECT * FROM plastic_actions WHERE id = :id", { id: Number(body.actionId) });
+      const action = await get("SELECT * FROM plastic_actions WHERE id = :id", { id: Number(body.actionId) });
       if (!action) return send(req, res, 400, { error: "找不到這個減塑行動。" });
-      if (actionDoneToday(user.id, action.id)) {
+      if (await actionDoneToday(user.id, action.id)) {
         return send(req, res, 409, { error: "今天已經完成過這項行動了，明天再來吧！" });
       }
       return send(req, res, 200, {
-        turtle: addAction(user.id, action),
+        turtle: await addAction(user.id, action),
         message: `完成「${action.title}」，海龜生命值增加了。`
       });
     }
@@ -283,8 +285,10 @@ async function handle(req, res) {
 
   if (method === "POST" && pathname === "/api/carbon/calculate") {
     const body = await parseBody(req);
-    const points = loadPlaces([body.startPlaceId, body.endPlaceId]);
-    const mode = get("SELECT * FROM transport_modes WHERE id = :id", { id: String(body.transportModeId || "") });
+    const points = await loadPlaces([body.startPlaceId, body.endPlaceId]);
+    const mode = await get("SELECT * FROM transport_modes WHERE id = :id", {
+      id: String(body.transportModeId || "")
+    });
 
     if (points.length !== 2 || !mode) {
       return send(req, res, 400, { error: "請選擇有效的起點、終點與交通方式。" });
@@ -295,8 +299,12 @@ async function handle(req, res) {
 
     const route = await planRoute(points, mode.google_mode);
     const carbon = carbonFor(route.distanceKm, mode);
-    const user = currentUser(req);
+    const user = await currentUser(req);
     const summary = `${points[0].name} → ${points[1].name}`;
+    const comparison = await modeComparison(route.distanceKm);
+    const turtle = user
+      ? await addTrip(user.id, { summary, modeId: mode.id, distanceKm: route.distanceKm, ...carbon })
+      : null;
 
     return send(req, res, 200, {
       route: {
@@ -312,8 +320,8 @@ async function handle(req, res) {
       },
       mode: { id: mode.id, name: mode.name, icon: mode.icon },
       ...carbon,
-      comparison: modeComparison(route.distanceKm),
-      turtle: user ? addTrip(user.id, { summary, modeId: mode.id, distanceKm: route.distanceKm, ...carbon }) : null,
+      comparison,
+      turtle,
       saved: Boolean(user),
       message: user
         ? carbon.points > 0
@@ -326,8 +334,10 @@ async function handle(req, res) {
   if (method === "POST" && pathname === "/api/routes/plan") {
     const body = await parseBody(req);
     const ids = Array.isArray(body.placeIds) ? body.placeIds.slice(0, MAX_ROUTE_POINTS) : [];
-    const points = loadPlaces(ids);
-    const mode = get("SELECT * FROM transport_modes WHERE id = :id", { id: String(body.transportModeId || "") });
+    const points = await loadPlaces(ids);
+    const mode = await get("SELECT * FROM transport_modes WHERE id = :id", {
+      id: String(body.transportModeId || "")
+    });
 
     if (points.length < 2) return send(req, res, 400, { error: "請至少選擇兩個點位。" });
     if (points.length !== ids.length) return send(req, res, 400, { error: "路線中有無效的點位。" });
@@ -335,9 +345,13 @@ async function handle(req, res) {
 
     const route = await planRoute(points, mode.google_mode);
     const carbon = carbonFor(route.distanceKm, mode);
-    const user = currentUser(req);
+    const user = await currentUser(req);
     const summary = points.map((p) => p.name).join(" → ");
     const shouldSave = Boolean(user) && body.save === true;
+    const comparison = await modeComparison(route.distanceKm);
+    const turtle = shouldSave
+      ? await addTrip(user.id, { summary, modeId: mode.id, distanceKm: route.distanceKm, ...carbon })
+      : null;
 
     return send(req, res, 200, {
       route: {
@@ -353,8 +367,8 @@ async function handle(req, res) {
       },
       mode: { id: mode.id, name: mode.name, icon: mode.icon },
       ...carbon,
-      comparison: modeComparison(route.distanceKm),
-      turtle: shouldSave ? addTrip(user.id, { summary, modeId: mode.id, distanceKm: route.distanceKm, ...carbon }) : null,
+      comparison,
+      turtle,
       saved: shouldSave,
       canSave: Boolean(user)
     });
@@ -373,8 +387,8 @@ async function handle(req, res) {
   }
 }
 
-migrate();
-seed();
+await migrate();
+await seed();
 
 createServer((req, res) => {
   handle(req, res).catch((error) => {
@@ -384,4 +398,5 @@ createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
   console.log(`路線來源：${ROUTING_LABEL[routingMode()] || routingMode()}`);
+  console.log(`資料庫：${describeDriver()}`);
 });

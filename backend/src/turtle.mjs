@@ -17,19 +17,20 @@ export function stageFor(life) {
   return STAGES.find((stage) => life >= stage.min) || STAGES[STAGES.length - 1];
 }
 
-function ensureRow(userId) {
-  const existing = get("SELECT * FROM turtle_progress WHERE user_id = :id", { id: userId });
+async function ensureRow(userId) {
+  const existing = await get("SELECT * FROM turtle_progress WHERE user_id = :id", { id: userId });
   if (existing) return existing;
-  run(
+
+  await run(
     `INSERT INTO turtle_progress (user_id, total_points, total_saved_kg, trip_count, action_count, updated_at)
      VALUES (:id, 0, 0, 0, 0, :now)`,
     { id: userId, now: new Date().toISOString() }
   );
-  return get("SELECT * FROM turtle_progress WHERE user_id = :id", { id: userId });
+  return await get("SELECT * FROM turtle_progress WHERE user_id = :id", { id: userId });
 }
 
-export function progressFor(userId) {
-  const row = ensureRow(userId);
+export async function progressFor(userId) {
+  const row = await ensureRow(userId);
   const life = Math.min(MAX_LIFE, Math.floor(row.total_points / POINTS_PER_LIFE));
   const stage = stageFor(life);
   const nextStage = [...STAGES].reverse().find((s) => s.min > life) || null;
@@ -50,10 +51,11 @@ export function progressFor(userId) {
   };
 }
 
-export function addTrip(userId, { summary, modeId, distanceKm, estimatedKg, savedKg, points }) {
-  ensureRow(userId);
+export async function addTrip(userId, { summary, modeId, distanceKm, estimatedKg, savedKg, points }) {
+  await ensureRow(userId);
   const now = new Date().toISOString();
-  run(
+
+  await run(
     `INSERT INTO trip_logs (user_id, summary, mode_id, distance_km, estimated_kg, saved_kg, points, created_at)
      VALUES (:user_id, :summary, :mode_id, :distance_km, :estimated_kg, :saved_kg, :points, :now)`,
     {
@@ -67,7 +69,7 @@ export function addTrip(userId, { summary, modeId, distanceKm, estimatedKg, save
       now
     }
   );
-  run(
+  await run(
     `UPDATE turtle_progress
         SET total_points = total_points + :points,
             total_saved_kg = total_saved_kg + :saved,
@@ -76,18 +78,19 @@ export function addTrip(userId, { summary, modeId, distanceKm, estimatedKg, save
       WHERE user_id = :user_id`,
     { points, saved: savedKg, now, user_id: userId }
   );
-  return progressFor(userId);
+  return await progressFor(userId);
 }
 
-export function addAction(userId, action) {
-  ensureRow(userId);
+export async function addAction(userId, action) {
+  await ensureRow(userId);
   const now = new Date().toISOString();
-  run(
+
+  await run(
     `INSERT INTO action_logs (user_id, action_id, title, points, co2_saved_kg, created_at)
      VALUES (:user_id, :action_id, :title, :points, :co2, :now)`,
     { user_id: userId, action_id: action.id, title: action.title, points: action.points, co2: action.co2_saved_kg, now }
   );
-  run(
+  await run(
     `UPDATE turtle_progress
         SET total_points = total_points + :points,
             total_saved_kg = total_saved_kg + :saved,
@@ -96,26 +99,27 @@ export function addAction(userId, action) {
       WHERE user_id = :user_id`,
     { points: action.points, saved: action.co2_saved_kg, now, user_id: userId }
   );
-  return progressFor(userId);
+  return await progressFor(userId);
 }
 
-export function historyFor(userId, limit = 20) {
-  return {
-    trips: all(
-      "SELECT * FROM trip_logs WHERE user_id = :id ORDER BY created_at DESC, id DESC LIMIT :limit",
-      { id: userId, limit }
-    ),
-    actions: all(
-      "SELECT * FROM action_logs WHERE user_id = :id ORDER BY created_at DESC, id DESC LIMIT :limit",
-      { id: userId, limit }
-    )
-  };
+export async function historyFor(userId, limit = 20) {
+  const [trips, actions] = await Promise.all([
+    all("SELECT * FROM trip_logs WHERE user_id = :id ORDER BY created_at DESC, id DESC LIMIT :limit", {
+      id: userId,
+      limit
+    }),
+    all("SELECT * FROM action_logs WHERE user_id = :id ORDER BY created_at DESC, id DESC LIMIT :limit", {
+      id: userId,
+      limit
+    })
+  ]);
+  return { trips, actions };
 }
 
 /** 今天是否已經完成過同一項減塑行動（避免重複打卡刷點數）。 */
-export function actionDoneToday(userId, actionId) {
+export async function actionDoneToday(userId, actionId) {
   const today = new Date().toISOString().slice(0, 10);
-  const row = get(
+  const row = await get(
     `SELECT COUNT(*) AS count FROM action_logs
       WHERE user_id = :id AND action_id = :action AND substr(created_at, 1, 10) = :today`,
     { id: userId, action: actionId, today }

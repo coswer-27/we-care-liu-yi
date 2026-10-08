@@ -29,7 +29,16 @@ All API calls use `credentials: "include"`, and CORS echoes the request Origin w
 
 ### Data layer
 
-`backend/src/db.mjs` opens `backend/data/app.db` (override with `DB_PATH`; gitignored, auto-created) in WAL mode and exports `migrate()` plus `all`/`get`/`run` helpers over named parameters (`:id`).
+`backend/src/sql.mjs` is the driver layer and exposes one **async** interface — `exec` / `all` / `get` / `run` / `batch` — over two backends chosen at startup:
+
+- **Turso** when `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` are set — libSQL's HTTP `/v2/pipeline` API called with built-in `fetch`, so it stays dependency-free. `batch()` sends many statements in one round trip; use it anywhere a request would otherwise fire several queries (seeding and `/api/home` already do).
+- **`node:sqlite`** otherwise, reading `DB_PATH` (default `backend/data/app.db`, gitignored, WAL).
+
+Turso is SQLite-compatible, so the SQL is identical for both. **Every DB call is async** — a missing `await` silently yields a Promise where a row is expected.
+
+Production must use Turso: Render's free filesystem is ephemeral and is wiped on redeploy, restart **and spin-down** (15 min idle), which would erase user accounts and turtle progress several times a day.
+
+`backend/src/db.mjs` re-exports those helpers, owns the schema, and runs `migrate()`.
 
 Schema changes to the **content** tables (`places`, `transport_modes`, `sustainable_shops`, `plastic_actions`, `articles`) are handled by bumping `CONTENT_SCHEMA_VERSION` in `db.mjs`: on startup those tables are dropped and re-seeded. User tables (`users`, `sessions`, `turtle_progress`, `trip_logs`, `action_logs`) are never dropped and only get plain `CREATE TABLE IF NOT EXISTS`, so changes there must be additive or need a hand-written migration. `seed.mjs` inserts per table only when that table is empty, so editing seed rows without bumping the version has no effect.
 
